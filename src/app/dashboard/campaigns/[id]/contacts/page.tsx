@@ -3,7 +3,8 @@ import { auth } from "@/auth"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { Phone, UserPlus, Users, Search, Play } from "lucide-react"
-import { addContactAction, bulkAddContactsAction } from "@/app/actions/contact"
+import { addContactAction, bulkAddContactsAction, deleteContactAction } from "@/app/actions/contact"
+import { DeleteContactButton } from "./DeleteContactButton"
 
 export default async function ContactsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -173,6 +174,14 @@ export default async function ContactsPage({ params }: { params: Promise<{ id: s
                         <Play className="w-4 h-4 fill-current" />
                         Call
                       </Link>
+
+                      {session.user.role === "ADMIN" && (
+                        <form action={deleteContactAction} className="shrink-0 flex items-center">
+                          <input type="hidden" name="contactId" value={contact.id} />
+                          <input type="hidden" name="campaignId" value={campaign.id} />
+                          <DeleteContactButton />
+                        </form>
+                      )}
                     </div>
                   </div>
                 )

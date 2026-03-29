@@ -62,3 +62,20 @@ export async function bulkAddContactsAction(formData: FormData) {
 
   revalidatePath(`/dashboard/campaigns/${campaignId}/contacts`)
 }
+
+export async function deleteContactAction(formData: FormData) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== "ADMIN") throw new Error("Unauthorized")
+
+  const contactId = formData.get("contactId") as string
+  const campaignId = formData.get("campaignId") as string
+
+  if (!contactId || !campaignId) throw new Error("Missing required fields")
+
+  await prisma.contact.delete({
+    where: { id: contactId }
+  })
+
+  revalidatePath(`/dashboard/campaigns/${campaignId}/contacts`)
+  revalidatePath(`/dashboard/campaigns/${campaignId}/results`)
+}
