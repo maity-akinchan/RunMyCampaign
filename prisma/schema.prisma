@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String       @unique
+  passwordHash  String
+  role          Role         @default(USER)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  campaigns     Campaign[]
+  callRecords   CallRecord[]
+  
+  assignedCampaignIds String[]   @db.ObjectId
+  assignedCampaigns   Campaign[] @relation("CampaignAssignees", fields: [assignedCampaignIds], references: [id])
+}
+
+model Campaign {
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  script          String
+  importantPoints String
+  questions       String[]     @default([])
+  whatsappMessage String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  userId          String       @db.ObjectId
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contacts        Contact[]
+  
+  assigneeIds     String[]     @db.ObjectId
+  assignedUsers   User[]       @relation("CampaignAssignees", fields: [assigneeIds], references: [id])
+}
+
+model Contact {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  phone       String
+  tags        String       // Storing as JSON array or comma separated
+  campaignId  String       @db.ObjectId
+  campaign    Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  callRecords CallRecord[]
+}
+
+model CallRecord {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  outcome     String   // e.g. "Completed", "Dropped Out", "No Answer"
+  notes       String?
+  answers     String?  // JSON string of { question: answer }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactId   String   @db.ObjectId
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+}
