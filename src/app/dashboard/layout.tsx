@@ -1,6 +1,7 @@
 import { ReactNode } from "react"
 import Link from "next/link"
-import { auth, signOut } from "@/auth"
+import { auth } from "@/auth"
+import { logoutAction } from "@/app/actions/auth"
 import { LayoutDashboard, Users, UserCircle, LogOut, PhoneCall } from "lucide-react"
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
@@ -16,9 +17,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }
 
   return (
-    <div className="flex h-screen w-full bg-zinc-950 text-white overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 bg-zinc-900/50 border-r border-white/10 flex flex-col p-4">
+    <div className="flex h-screen w-full bg-zinc-950 text-white overflow-hidden relative">
+      {/* Sidebar (Desktop) */}
+      <aside className="hidden md:flex w-64 bg-zinc-900/50 border-r border-white/10 flex-col p-4 shrink-0 z-20">
         <div className="flex items-center gap-3 px-2 py-4 mb-6 text-white text-xl font-bold tracking-tight">
           <PhoneCall className="w-6 h-6 text-blue-500" />
           RunMyCampaign
@@ -45,12 +46,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               <span className="text-xs text-zinc-500 capitalize">{session.user.role?.toLowerCase() || "User"}</span>
             </div>
           </div>
-          <form
-            action={async () => {
-              "use server"
-              await signOut({ redirectTo: "/login" })
-            }}
-          >
+          <form action={logoutAction}>
             <button type="submit" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-colors">
               <LogOut className="w-5 h-5" />
               <span>Sign out</span>
@@ -68,10 +64,32 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <h2 className="text-sm font-medium text-zinc-400">Campaign Manager</h2>
         </header>
 
-        <div className="p-8 pb-24 z-0">
+        <div className="p-4 md:p-8 pb-24 z-0">
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-zinc-950/95 border-t border-white/10 backdrop-blur-xl z-50 flex items-center justify-around p-3 pb-6">
+        <Link href="/dashboard" className="flex flex-col items-center gap-1.5 text-zinc-400 hover:text-white transition-colors">
+          <LayoutDashboard className="w-6 h-6 text-blue-400" />
+          <span className="text-[11px] font-semibold">Dashboard</span>
+        </Link>
+        
+        {session.user.role === "ADMIN" && (
+          <Link href="/dashboard/campaigns/new" className="flex flex-col items-center gap-1.5 text-zinc-400 hover:text-white transition-colors">
+            <Users className="w-6 h-6 text-purple-400" />
+            <span className="text-[11px] font-semibold">Campaign</span>
+          </Link>
+        )}
+
+        <form action={logoutAction} className="flex flex-col items-center">
+          <button type="submit" className="flex flex-col items-center gap-1.5 text-zinc-400 hover:text-red-400 transition-colors">
+            <LogOut className="w-6 h-6" />
+            <span className="text-[11px] font-semibold">Logout</span>
+          </button>
+        </form>
+      </nav>
     </div>
   )
 }

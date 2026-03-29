@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { redirect } from "next/navigation"
-import { signIn } from "@/auth"
+import { signIn, signOut } from "@/auth"
 import { AuthError } from "next-auth"
 
 export async function registerAction(formData: FormData) {
@@ -39,4 +39,8 @@ export async function loginAction(formData: FormData) {
     }
     throw error // Important: Next.js redirects throw errors, so we must re-throw
   }
+}
+
+export async function logoutAction() {
+  await signOut({ redirectTo: "/login" })
 }

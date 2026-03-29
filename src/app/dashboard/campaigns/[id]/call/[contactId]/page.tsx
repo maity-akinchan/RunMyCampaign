@@ -33,7 +33,7 @@ export default async function CallingInterfacePage({ params }: { params: Promise
   const waLink = `https://wa.me/${contact.phone.replace(/[^a-zA-Z0-9]/g, "")}?text=${encodeURIComponent(waMessage)}`
 
   return (
-    <div className="flex flex-col h-full max-h-[85vh]">
+    <div className="flex flex-col lg:h-full lg:max-h-[85vh]">
       
       {/* Top Bar Navigation */}
       <div className="flex items-center justify-between mb-6">
@@ -58,10 +58,10 @@ export default async function CallingInterfacePage({ params }: { params: Promise
         </a>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 lg:overflow-hidden">
         
         {/* Left Side: Campaign Context (Script & Points) */}
-        <div className="flex flex-col gap-4 h-full overflow-y-auto pr-2 custom-scrollbar">
+        <div className="flex flex-col gap-4 lg:h-full lg:overflow-y-auto pr-2 custom-scrollbar">
           
           <details className="group bg-blue-950/20 border border-blue-500/20 rounded-3xl p-5 cursor-pointer" open>
             <summary className="text-lg font-semibold text-blue-400 flex items-center justify-between list-none">
@@ -87,19 +87,19 @@ export default async function CallingInterfacePage({ params }: { params: Promise
         </div>
 
         {/* Right Side: Contact Profile & Logging */}
-        <div className="flex flex-col gap-6 h-full overflow-y-auto pr-2 custom-scrollbar pb-10">
+        <div className="flex flex-col gap-6 lg:h-full lg:overflow-y-auto pr-2 custom-scrollbar pb-10">
           
           <div className="bg-zinc-900 border border-white/10 rounded-3xl p-6 flex flex-col gap-4 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
                 <User className="w-7 h-7 text-white" />
               </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-white">{contact.name}</h3>
-                <div className="flex items-center gap-2 text-zinc-400 mt-0.5">
+              <div className="flex-1 overflow-hidden">
+                <h3 className="text-xl font-bold text-white truncate">{contact.name}</h3>
+                <a href={`tel:${contact.phone}`} className="flex w-fit items-center gap-2 text-blue-400 hover:text-blue-300 mt-1 transition-colors">
                   <Phone className="w-4 h-4" />
-                  <span>{contact.phone}</span>
-                </div>
+                  <span className="font-medium underline underline-offset-2">{contact.phone}</span>
+                </a>
               </div>
             </div>
 

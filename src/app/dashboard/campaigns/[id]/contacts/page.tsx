@@ -139,8 +139,8 @@ export default async function ContactsPage({ params }: { params: Promise<{ id: s
                 // Determine latest outcome if any
                 const latestCall = contact.callRecords[0];
                 return (
-                  <div key={contact.id} className="flex items-center justify-between p-4 bg-zinc-900 border border-white/5 rounded-2xl hover:bg-zinc-800/80 transition-colors">
-                    <div className="flex flex-col gap-1">
+                  <div key={contact.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-zinc-900 border border-white/5 rounded-2xl hover:bg-zinc-800/80 transition-colors gap-4 sm:gap-0">
+                    <div className="flex flex-col gap-1 w-full sm:w-auto">
                       <div className="flex items-center gap-3">
                         <span className="font-semibold text-white text-lg">{contact.name}</span>
                         {contact.tags && (
@@ -149,13 +149,13 @@ export default async function ContactsPage({ params }: { params: Promise<{ id: s
                           </span>
                         )}
                       </div>
-                      <span className="text-sm text-zinc-500 flex items-center gap-1.5">
+                      <a href={`tel:${contact.phone}`} className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1.5 w-fit mt-0.5 transition-colors">
                         <Phone className="w-3.5 h-3.5" />
-                        {contact.phone}
-                      </span>
+                        <span className="underline underline-offset-2">{contact.phone}</span>
+                      </a>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                       {latestCall && (
                          <span className={`text-xs px-2.5 py-1 rounded-full border ${
                            latestCall.outcome === "Completed" ? "bg-green-500/10 text-green-400 border-green-500/20" :
@@ -168,7 +168,7 @@ export default async function ContactsPage({ params }: { params: Promise<{ id: s
                       
                       <Link 
                         href={`/dashboard/campaigns/${campaign.id}/call/${contact.id}`}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-blue-500/20"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-blue-500/20 shrink-0"
                       >
                         <Play className="w-4 h-4 fill-current" />
                         Call
