@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma"
 import { auth } from "@/auth"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Phone, User, MessageCircle, FileText, CheckCircle, XCircle, Clock } from "lucide-react"
+import { ArrowLeft, Phone, User, MessageCircle, FileText, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react"
 import { logCallOutcomeAction } from "@/app/actions/call"
 
 export default async function CallingInterfacePage({ params }: { params: Promise<{ id: string, contactId: string }> }) {
@@ -24,6 +24,18 @@ export default async function CallingInterfacePage({ params }: { params: Promise
       }
     }
   })
+
+  // Find duplicates across other campaigns
+  const otherInstances = await prisma.contact.findMany({
+    where: { 
+      phone: contact?.phone,
+      campaignId: { not: id }
+    },
+    include: { campaign: true }
+  })
+
+  // Deduplicate campaign names
+  const otherCampaignNames = Array.from(new Set(otherInstances.map((c: any) => c.campaign?.name).filter(Boolean)))
 
   if (!campaign || !contact) notFound()
 
@@ -112,6 +124,21 @@ export default async function CallingInterfacePage({ params }: { params: Promise
                       {tag}
                     </span>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {otherCampaignNames.length > 0 && (
+              <div className="mt-2 pt-4 border-t border-white/5">
+                <div className="flex items-start gap-2 bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl">
+                  <AlertCircle className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-orange-400">Exists in Other Campaigns</span>
+                    <span className="text-xs text-orange-300 mt-1">
+                      This constituent is also tracking inside: <br/> 
+                      <strong className="text-orange-200">{otherCampaignNames.join(" • ")}</strong>
+                    </span>
+                  </div>
                 </div>
               </div>
             )}

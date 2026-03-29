@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache"
 export async function addContactAction(formData: FormData) {
   const session = await auth()
   
-  if (!session?.user) {
+  if (!session?.user || session.user.role !== "ADMIN") {
     throw new Error("Unauthorized")
   }
 
@@ -34,7 +34,7 @@ export async function addContactAction(formData: FormData) {
 
 export async function bulkAddContactsAction(formData: FormData) {
   const session = await auth()
-  if (!session?.user) throw new Error("Unauthorized")
+  if (!session?.user || session.user.role !== "ADMIN") throw new Error("Unauthorized")
 
   const campaignId = formData.get("campaignId") as string
   const rawData = formData.get("rawData") as string

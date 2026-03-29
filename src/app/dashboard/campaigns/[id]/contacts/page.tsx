@@ -40,7 +40,8 @@ export default async function ContactsPage({ params }: { params: Promise<{ id: s
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Form */}
-        <div className="lg:col-span-1 flex flex-col gap-6">
+        {session.user.role === "ADMIN" && (
+          <div className="lg:col-span-1 flex flex-col gap-6">
           <div className="bg-zinc-900 border border-white/10 rounded-3xl p-6">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-purple-400" />
@@ -116,9 +117,10 @@ export default async function ContactsPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
         </div>
+        )}
 
         {/* Right Column: List */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
+        <div className={`flex flex-col gap-4 ${session.user.role === "ADMIN" ? "lg:col-span-2" : "lg:col-span-3"}`}>
           <div className="flex items-center justify-between pb-4 border-b border-white/10">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-400" />
