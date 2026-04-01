@@ -228,10 +228,17 @@ export default async function ContactsPage(props: { params: Promise<{ id: string
                           </span>
                         )}
                       </div>
-                      <a href={`tel:${contact.phone}`} className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1.5 w-fit mt-0.5 transition-colors">
-                        <Phone className="w-3.5 h-3.5" />
-                        <span className="underline underline-offset-2">{contact.phone}</span>
-                      </a>
+                      {contact.assignedToId === session.user.id || isAdmin ? (
+                        <a href={`tel:${contact.phone}`} className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1.5 w-fit mt-0.5 transition-colors">
+                          <Phone className="w-3.5 h-3.5" />
+                          <span className="underline underline-offset-2">{contact.phone}</span>
+                        </a>
+                      ) : (
+                        <div className="text-sm text-zinc-500 flex items-center gap-1.5 w-fit mt-0.5">
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>+X (XXX) XXX-XXXX</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
