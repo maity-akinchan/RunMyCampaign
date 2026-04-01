@@ -1,9 +1,10 @@
 import prisma from "@/lib/prisma"
 import { auth } from "@/auth"
-import { notFound } from "next/navigation"
+import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Phone, User, MessageCircle, FileText, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react"
+import { ArrowLeft, Phone, User, MessageCircle, FileText, CheckCircle, XCircle, Clock, AlertCircle, PhoneOff, FastForward } from "lucide-react"
 import { logCallOutcomeAction } from "@/app/actions/call"
+import { unassignContactAction } from "@/app/actions/contact"
 
 export default async function CallingInterfacePage({ params }: { params: Promise<{ id: string, contactId: string }> }) {
   const { id, contactId } = await params;
@@ -38,6 +39,29 @@ export default async function CallingInterfacePage({ params }: { params: Promise
   const otherCampaignNames = Array.from(new Set(otherInstances.map((c: any) => c.campaign?.name).filter(Boolean)))
 
   if (!campaign || !contact) notFound()
+
+  if (!contact.assignedToId) {
+    await prisma.contact.update({
+      where: { id: contact.id },
+      data: { assignedToId: session.user.id }
+    })
+    contact.assignedToId = session.user.id
+  } else if (contact.assignedToId !== session.user.id) {
+    redirect(`/dashboard/campaigns/${campaign.id}/contacts?error=This+contact+is+assigned+to+someone+else`)
+  }
+
+  const latestCall = contact.callRecords[0]
+  let defaultNotes = ""
+  let defaultOutcome = ""
+  let defaultAnswers: any = {}
+  
+  if (latestCall && latestCall.userId === session.user.id) {
+    defaultNotes = latestCall.notes || ""
+    defaultOutcome = latestCall.outcome || ""
+    if (latestCall.answers) {
+      try { defaultAnswers = JSON.parse(latestCall.answers) } catch (e) {}
+    }
+  }
 
   // Generate WhatsApp Link
   let rawMessage = campaign.whatsappMessage || `Hi [Name], I'm reaching out regarding the ${campaign.name} program.`
@@ -150,14 +174,16 @@ export default async function CallingInterfacePage({ params }: { params: Promise
 
             <h2 className="text-lg font-semibold text-white mb-4">Log Outcome</h2>
             
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               {[
                 { label: 'Completed', value: 'Completed', icon: CheckCircle, color: 'text-green-500', bg: 'peer-checked:border-green-500 peer-checked:bg-green-500/10' },
-                { label: 'No Answer', value: 'No Answer', icon: Clock, color: 'text-orange-500', bg: 'peer-checked:border-orange-500 peer-checked:bg-orange-500/10' },
+                { label: 'Follow Up', value: 'Follow Up', icon: Clock, color: 'text-blue-500', bg: 'peer-checked:border-blue-500 peer-checked:bg-blue-500/10' },
+                { label: 'No Answer', value: 'No Answer', icon: PhoneOff, color: 'text-orange-500', bg: 'peer-checked:border-orange-500 peer-checked:bg-orange-500/10' },
+                { label: 'Skipped', value: 'Skipped', icon: FastForward, color: 'text-zinc-500', bg: 'peer-checked:border-zinc-500 peer-checked:bg-zinc-500/10' },
                 { label: 'Dropped Out', value: 'Dropped Out', icon: XCircle, color: 'text-red-500', bg: 'peer-checked:border-red-500 peer-checked:bg-red-500/10' }
               ].map(opt => (
                 <label key={opt.value} className="relative cursor-pointer">
-                  <input type="radio" name="outcome" value={opt.value} className="peer sr-only" required />
+                  <input type="radio" name="outcome" value={opt.value} defaultChecked={opt.value === defaultOutcome} className="peer sr-only" required />
                   <div className={`flex flex-col items-center gap-2 p-3 rounded-xl border border-white/10 bg-black/50 hover:bg-zinc-800 transition-all ${opt.bg}`}>
                     <opt.icon className={`w-5 h-5 ${opt.color}`} />
                     <span className="text-xs font-medium text-white text-center">{opt.label}</span>
@@ -179,6 +205,7 @@ export default async function CallingInterfacePage({ params }: { params: Promise
                     <input 
                       type="text" 
                       name={`qanswer_${i}`} 
+                      defaultValue={defaultAnswers[q] || ""}
                       placeholder="Type caller's answer..." 
                       className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                     />
@@ -191,16 +218,40 @@ export default async function CallingInterfacePage({ params }: { params: Promise
               <label className="text-sm font-medium text-zinc-400 mb-2">Call Notes / Remarks</label>
               <textarea 
                 name="notes" 
+                defaultValue={defaultNotes}
                 placeholder="E.g. They asked us to call back tomorrow at 5pm."
                 className="w-full flex-1 min-h-[100px] bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-y"
               />
             </div>
 
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button 
+                type="submit" 
+                name="actionType"
+                value="save_and_next"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium py-3.5 rounded-xl transition-all shadow-lg shadow-blue-500/25"
+              >
+                Save & Call Next
+              </button>
+              <button 
+                type="submit" 
+                name="actionType"
+                value="save_and_return"
+                className="flex-1 bg-white hover:bg-zinc-200 text-black font-medium py-3.5 rounded-xl transition-all shadow-lg"
+              >
+                Save & Return
+              </button>
+            </div>
+          </form>
+
+          <form action={unassignContactAction} className="shrink-0">
+            <input type="hidden" name="contactId" value={contact.id} />
+            <input type="hidden" name="campaignId" value={campaign.id} />
             <button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3.5 rounded-xl transition-all shadow-lg shadow-blue-500/25"
+              className="w-full bg-transparent hover:bg-red-500/10 text-red-500 font-medium py-3 rounded-xl transition-all border border-red-500/20"
             >
-              Save & Return to List
+              Release / Unassign Contact
             </button>
           </form>
 

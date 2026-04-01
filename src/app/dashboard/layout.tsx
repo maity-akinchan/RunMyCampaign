@@ -2,7 +2,7 @@ import { ReactNode } from "react"
 import Link from "next/link"
 import { auth } from "@/auth"
 import { logoutAction } from "@/app/actions/auth"
-import { LayoutDashboard, Users, UserCircle, LogOut, PhoneCall } from "lucide-react"
+import { LayoutDashboard, Users, UserCircle, LogOut, PhoneCall, BarChart3 } from "lucide-react"
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await auth()
@@ -35,6 +35,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <Users className="w-5 h-5 text-purple-400" />
             <span>New Campaign</span>
           </Link>
+
+          {session.user.role === "ADMIN" && (
+            <Link href="/dashboard/analytics" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-zinc-300 hover:text-white">
+              <BarChart3 className="w-5 h-5 text-green-400" />
+              <span>Global Analytics</span>
+            </Link>
+          )}
         </nav>
 
         {/* User Info & Logout */}
@@ -77,10 +84,16 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         </Link>
         
         {session.user.role === "ADMIN" && (
-          <Link href="/dashboard/campaigns/new" className="flex flex-col items-center gap-1.5 text-zinc-400 hover:text-white transition-colors">
-            <Users className="w-6 h-6 text-purple-400" />
-            <span className="text-[11px] font-semibold">Campaign</span>
-          </Link>
+          <>
+            <Link href="/dashboard/analytics" className="flex flex-col items-center gap-1.5 text-zinc-400 hover:text-white transition-colors">
+              <BarChart3 className="w-6 h-6 text-green-400" />
+              <span className="text-[11px] font-semibold">Analytics</span>
+            </Link>
+            <Link href="/dashboard/campaigns/new" className="flex flex-col items-center gap-1.5 text-zinc-400 hover:text-white transition-colors">
+              <Users className="w-6 h-6 text-purple-400" />
+              <span className="text-[11px] font-semibold">Campaign</span>
+            </Link>
+          </>
         )}
 
         <form action={logoutAction} className="flex flex-col items-center">

@@ -13,6 +13,7 @@ export async function logCallOutcomeAction(formData: FormData) {
   const outcome = formData.get("outcome") as string
   const notes = formData.get("notes") as string || ""
   const campaignId = formData.get("campaignId") as string
+  const actionType = formData.get("actionType") as string
 
   if (!contactId || !outcome || !campaignId) {
     throw new Error("Missing required fields")
@@ -39,5 +40,27 @@ export async function logCallOutcomeAction(formData: FormData) {
 
   // Force completely purge the campaign contacts cache to instantly display updated statuses.
   revalidatePath(`/dashboard/campaigns/${campaignId}/contacts`)
-  redirect(`/dashboard/campaigns/${campaignId}/contacts`)
+  
+  if (actionType === "save_and_next") {
+    const nextContact = await prisma.contact.findFirst({
+      where: {
+        campaignId,
+        assignedToId: null
+      },
+      orderBy: { createdAt: "asc" }
+    })
+
+    if (!nextContact) {
+      redirect(`/dashboard/campaigns/${campaignId}/contacts?error=No+available+contacts`)
+    }
+
+    await prisma.contact.update({
+      where: { id: nextContact.id },
+      data: { assignedToId: session.user.id }
+    })
+    
+    redirect(`/dashboard/campaigns/${campaignId}/call/${nextContact.id}`)
+  } else {
+    redirect(`/dashboard/campaigns/${campaignId}/contacts`)
+  }
 }

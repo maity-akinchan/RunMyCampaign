@@ -3,11 +3,12 @@ import { auth } from "@/auth"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { Phone, UserPlus, Users, Search, Play } from "lucide-react"
-import { addContactAction, bulkAddContactsAction, deleteContactAction } from "@/app/actions/contact"
+import { addContactAction, bulkAddContactsAction, deleteContactAction, callNextAvailableAction } from "@/app/actions/contact"
 import { DeleteContactButton } from "./DeleteContactButton"
 
-export default async function ContactsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function ContactsPage(props: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string, error?: string }> }) {
+  const { id } = await props.params;
+  const { tab = "to-call", error } = await props.searchParams;
   
   const session = await auth()
   if (!session?.user) return null
@@ -28,6 +29,32 @@ export default async function ContactsPage({ params }: { params: Promise<{ id: s
 
   if (!campaign) notFound()
 
+  const isAdmin = session.user.role === "ADMIN"
+  
+  const visibleContacts = isAdmin 
+    ? campaign.contacts
+    : campaign.contacts.filter((c: any) => c.assignedToId === null || c.assignedToId === session.user.id);
+  
+  let displayedContacts = visibleContacts;
+
+  if (tab !== "all") {
+    displayedContacts = visibleContacts.filter((c: any) => {
+      const latestCall = c.callRecords[0];
+      const outcome = latestCall?.outcome;
+      
+      if (tab === "to-call") {
+         return c.assignedToId === null || (c.assignedToId === session.user.id && (!outcome || outcome === "To Call"));
+      } else if (tab === "follow-up") {
+         return c.assignedToId === session.user.id && outcome === "Follow Up";
+      } else if (tab === "no-answer") {
+         return c.assignedToId === session.user.id && outcome === "No Answer";
+      } else if (tab === "skipped") {
+         return c.assignedToId === session.user.id && outcome === "Skipped";
+      }
+      return false;
+    });
+  }
+
   return (
     <div className="flex flex-col gap-8">
       {/* Header */}
@@ -37,6 +64,13 @@ export default async function ContactsPage({ params }: { params: Promise<{ id: s
           <p className="text-zinc-400">Manage contacts and start dialing.</p>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl flex items-center justify-between">
+          <span>{error}</span>
+          <Link href={`/dashboard/campaigns/${campaign.id}/contacts`} className="text-red-300 hover:text-white underline text-sm">Dismiss</Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Form */}
@@ -126,19 +160,61 @@ export default async function ContactsPage({ params }: { params: Promise<{ id: s
               <Users className="w-5 h-5 text-blue-400" />
               <h2 className="text-xl font-semibold text-white">Contact List</h2>
               <span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full text-xs font-medium ml-2">
-                {campaign.contacts.length}
+                {displayedContacts.length}
               </span>
             </div>
+            {tab === "to-call" && displayedContacts.length > 0 && (
+              <form action={callNextAvailableAction}>
+                <input type="hidden" name="campaignId" value={campaign.id} />
+                <button type="submit" className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/20">
+                  <Play className="w-4 h-4 fill-current" />
+                  Call Next Available
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 pb-2">
+            {[
+              { id: 'to-call', label: 'To Call' },
+              { id: 'follow-up', label: 'Follow Up' },
+              { id: 'no-answer', label: 'No Answer' },
+              { id: 'skipped', label: 'Skipped' },
+            ].map(t => (
+              <Link 
+                key={t.id}
+                href={`?tab=${t.id}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  tab === t.id 
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
+                    : 'bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700/50'
+                }`}
+              >
+                {t.label}
+              </Link>
+            ))}
+            {isAdmin && (
+              <Link 
+                href="?tab=all"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ml-auto ${
+                  tab === 'all' 
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' 
+                    : 'bg-purple-900/10 text-purple-400 hover:text-white hover:bg-purple-900/30 border border-purple-500/20'
+                }`}
+              >
+                All (Admin)
+              </Link>
+            )}
           </div>
 
           <div className="space-y-3 mt-2">
-            {campaign.contacts.length === 0 ? (
+            {displayedContacts.length === 0 ? (
               <div className="py-12 text-center border border-dashed border-white/10 rounded-2xl bg-zinc-900/50">
                 <Users className="w-8 h-8 text-zinc-600 mb-3 mx-auto" />
                 <p className="text-zinc-400">No contacts yet. Add your first one to start calling.</p>
               </div>
-            ) : (
-              campaign.contacts.map((contact: any) => {
+              ) : (
+              displayedContacts.map((contact: any) => {
                 // Determine latest outcome if any
                 const latestCall = contact.callRecords[0];
                 return (

@@ -28,6 +28,7 @@ model User {
   
   assignedCampaignIds String[]   @db.ObjectId
   assignedCampaigns   Campaign[] @relation("CampaignAssignees", fields: [assignedCampaignIds], references: [id])
+  assignedContacts    Contact[]  @relation("ContactAssignment")
 }
 
 model Campaign {
@@ -57,6 +58,9 @@ model Contact {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   callRecords CallRecord[]
+  
+  assignedToId String?     @db.ObjectId
+  assignedTo   User?       @relation("ContactAssignment", fields: [assignedToId], references: [id])
 }
 
 model CallRecord {
